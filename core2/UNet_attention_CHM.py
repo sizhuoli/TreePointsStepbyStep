@@ -13,7 +13,7 @@ from tensorflow.keras import regularizers
 import tensorflow.keras.backend as K
 
 
-def UNet(input_shape,input_label_channel, layer_count=64, regularizers = regularizers.l2(0.0001), gaussian_noise=0.1, weight_file = None):
+def UNet(input_shape, layer_count=64, regularizers = regularizers.l2(0.0001), gaussian_noise=0.1, weight_file = None):
 
 
         input_img = layers.Input(input_shape[1:], name='Input')
@@ -60,7 +60,7 @@ def UNet(input_shape,input_label_channel, layer_count=64, regularizers = regular
         n8 = layers.BatchNormalization()(c8)
         
         # relu activation or linear
-        d = layers.Conv2D(len(input_label_channel), (1, 1), activation='linear', kernel_regularizer= regularizers)(n8)
+        d = layers.Conv2D(1, (1, 1), activation='linear', kernel_regularizer= regularizers)(n8)
 
         seg_model = models.Model(inputs=[input_img], outputs=[d])
         if weight_file:
