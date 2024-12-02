@@ -6,6 +6,9 @@ from skimage.feature import peak_local_max
 import ipdb
 import geopandas as gpd
 from shapely.geometry import Point
+from concurrent.futures import ProcessPoolExecutor
+
+
 
 
 def heat2map(heatmap, chm, elevation, image, output, min_dis = 2, thres_abs = 0.001, alpha = 0.2, height_window = 5, low_vege = 3, ndvi_tree = 0.2, scan_window = 10):
@@ -84,7 +87,7 @@ def main(args):
     import os
     import glob
     from tqdm import tqdm
-    heatmaps = glob.glob(args.heatmap_dir + '1km*density.tif')
+    heatmaps = glob.glob(args.heatmap_dir + '*1km*density.tif')
     print(f'Found {len(heatmaps)} heatmaps (tree density maps) to process')
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
@@ -105,14 +108,14 @@ def main(args):
             elevation_missing.append(locate)
             print(f'No elevation found for {locate}')
             continue
-        # try:
-        ipdb.set_trace()
-        image = glob.glob(args.image_dir + f'*{locate}*.tif', recursive=True)[0]
-        output = os.path.join(args.output_dir, f'1km_{locate}_treeCenters.gpkg')
-        heat2map(heat, chm, elevation, image, output, min_dis=args.min_dis, thres_abs=args.thres_abs, alpha = args.alpha, height_window=args.height_window, low_vege=args.low_vege, ndvi_tree=args.ndvi_tree, scan_window=args.scan_window)
-        # except:
-        #     processing_error.append(locate)
-        #     print(f'Error processing {locate}')
+        try:
+            # ipdb.set_trace()
+            image = glob.glob(args.image_dir + f'*{locate}*.tif', recursive=True)[0]
+            output = os.path.join(args.output_dir, f'1km_{locate}_treeCenters.gpkg')
+            heat2map(heat, chm, elevation, image, output, min_dis=args.min_dis, thres_abs=args.thres_abs, alpha = args.alpha, height_window=args.height_window, low_vege=args.low_vege, ndvi_tree=args.ndvi_tree, scan_window=args.scan_window)
+        except:
+            processing_error.append(locate)
+            print(f'Error processing {locate}')
 
 
     return chm_missing, elevation_missing, processing_error
