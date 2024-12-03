@@ -7,11 +7,35 @@ import ipdb
 import geopandas as gpd
 from shapely.geometry import Point
 from concurrent.futures import ProcessPoolExecutor
+import os
+import glob
+from tqdm import tqdm
+# from multiprocessing import Pool
+import re
+import warnings
+warnings.filterwarnings("ignore")
 
 
+def heat2map(heatmap, args):
+    #/ mnt / ssdc / Denmark / DK_treeProject_DHI_KDS / kongernes / predictions / final_3models_std64 / 2019_1km_6197_684_density.tif
+    # locate='6197_684'
+    locate = re.search(r'1km_(\d+_\d+)_density', heatmap).group(1)
+
+    try:
+        chm = glob.glob(args.chm_dir + f'**/*{locate}*.tif', recursive=True)[0]
+    except:
+        print(f'No chm found for {locate}')
+        return 'error chm'
+    try:
+        elevation = glob.glob(args.elevation_dir + f'**/*{locate}*.tif', recursive=True)[0]
+    except:
+        print(f'No elevation found for {locate}')
+        return 'error elevation'
+
+    image = glob.glob(args.image_dir + f'*{locate}*.tif', recursive=True)[0]
+    output = os.path.join(args.output_dir, f'1km_{locate}_treeCenters.gpkg')
 
 
-def heat2map(heatmap, chm, elevation, image, output, min_dis = 2, thres_abs = 0.001, alpha = 0.2, height_window = 5, low_vege = 3, ndvi_tree = 0.2, scan_window = 10):
     with rasterio.open(heatmap) as src1:
         heat = src1.read(1)
         # filter out ground/buildings using ndvi mask
@@ -25,8 +49,8 @@ def heat2map(heatmap, chm, elevation, image, output, min_dis = 2, thres_abs = 0.
             # filter out ground or buildings
             assert ndvi.shape == heat.shape
             heat[ndvi < 0] = 0 # only filter out very low ndvi
-            thress = max(heat.max() * alpha, thres_abs)
-            coords = peak_local_max(heat, min_distance=min_dis, threshold_abs=thress)
+            thress = max(heat.max() * args.alpha, args.thres_abs)
+            coords = peak_local_max(heat, min_distance=args.min_dis, threshold_abs=thress)
 
             with rasterio.open(chm) as src2:
                 height = src2.read(1)
@@ -41,23 +65,23 @@ def heat2map(heatmap, chm, elevation, image, output, min_dis = 2, thres_abs = 0.
                     if len(coords) != 0:
                         for c in coords:
                             x, y = c
-                            point_height.append(height[max(0, x-height_window):min(height.shape[0], x+height_window), max(0, y-height_window):min(height.shape[1], y+height_window)].max())
-                            point_elev.append(elev[max(0, x-height_window):min(elev.shape[0], x+height_window), max(0, y-height_window):min(elev.shape[1], y+height_window)].max())
+                            point_height.append(height[max(0, x-args.height_window):min(height.shape[0], x+args.height_window), max(0, y-args.height_window):min(height.shape[1], y+args.height_window)].max())
+                            point_elev.append(elev[max(0, x-args.height_window):min(elev.shape[0], x+args.height_window), max(0, y-args.height_window):min(elev.shape[1], y+args.height_window)].max())
                             # a binary mask to record scanned area on the height map, window to deal with the shift between optical and lidar and should cover the entire tree
-                            scanned_area[max(0, x-scan_window):min(height.shape[0], x+scan_window), max(0, y-scan_window):min(height.shape[1], y+scan_window)] = 1
+                            scanned_area[max(0, x-args.scan_window):min(height.shape[0], x+args.scan_window), max(0, y-args.scan_window):min(height.shape[1], y+args.scan_window)] = 1
 
                     # detect peaks from height also
                     thres_h = height.copy()
-                    thres_h[thres_h < low_vege] = 0 # filter out low vegetation
+                    thres_h[thres_h < args.low_vege] = 0 # filter out low vegetation
                     thres_h[scanned_area == 1] = 0
-                    thres_h[ndvi < ndvi_tree] = 0
+                    thres_h[ndvi < args.ndvi_tree] = 0
                     # ipdb.set_trace()
-                    coords2 = peak_local_max(thres_h, min_distance=8, threshold_abs=low_vege, num_peaks=20000)
+                    coords2 = peak_local_max(thres_h, min_distance=8, threshold_abs=args.low_vege, num_peaks=20000)
                     if len(coords2) != 0:
                         for c in coords2:
                             x, y = c
-                            point_height.append(height[max(0, x-height_window):min(height.shape[0], x+height_window), max(0, y-height_window):min(height.shape[1], y+height_window)].max())
-                            point_elev.append(elev[max(0, x-height_window):min(elev.shape[0], x+height_window), max(0, y-height_window):min(elev.shape[1], y+height_window)].max())
+                            point_height.append(height[max(0, x-args.height_window):min(height.shape[0], x+args.height_window), max(0, y-args.height_window):min(height.shape[1], y+args.height_window)].max())
+                            point_elev.append(elev[max(0, x-args.height_window):min(elev.shape[0], x+args.height_window), max(0, y-args.height_window):min(elev.shape[1], y+args.height_window)].max())
 
 
                 point_height = np.array(point_height)
@@ -76,49 +100,29 @@ def heat2map(heatmap, chm, elevation, image, output, min_dis = 2, thres_abs = 0.
                     gdf = gdf[gdf['TreeHeight'] >= 1]
                     gdf.to_file(output, driver='GPKG')
                 else:
+                    geo_points = []
                     gdf = gpd.GeoDataFrame(geometry=[], crs=crs)
                     gdf.to_file(output, driver='GPKG')
     del heat, height, elev, coords, point_height, point_elev, geo_points, gdf
-    return
+
+    return 'processed'
 
 
 def main(args):
-    # process whole dir
-    import os
-    import glob
-    from tqdm import tqdm
+
     heatmaps = glob.glob(args.heatmap_dir + '*1km*density.tif')
     print(f'Found {len(heatmaps)} heatmaps (tree density maps) to process')
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
-    chm_missing = []
-    elevation_missing = []
-    processing_error = []
-    for heat in tqdm(heatmaps):
-        locate = heat.split('/')[-1].split('_')[1] + '_' + heat.split('/')[-1].split('_')[2]
-        try:
-            chm = glob.glob(args.chm_dir + f'**/*{locate}*.tif', recursive=True)[0]
-        except:
-            chm_missing.append(locate)
-            print(f'No chm found for {locate}')
-            continue
-        try:
-            elevation = glob.glob(args.elevation_dir + f'**/*{locate}*.tif', recursive=True)[0]
-        except:
-            elevation_missing.append(locate)
-            print(f'No elevation found for {locate}')
-            continue
-        try:
-            # ipdb.set_trace()
-            image = glob.glob(args.image_dir + f'*{locate}*.tif', recursive=True)[0]
-            output = os.path.join(args.output_dir, f'1km_{locate}_treeCenters.gpkg')
-            heat2map(heat, chm, elevation, image, output, min_dis=args.min_dis, thres_abs=args.thres_abs, alpha = args.alpha, height_window=args.height_window, low_vege=args.low_vege, ndvi_tree=args.ndvi_tree, scan_window=args.scan_window)
-        except:
-            processing_error.append(locate)
-            print(f'Error processing {locate}')
 
+    with ProcessPoolExecutor(max_workers=args.maxworker) as executor:
+        flag = list(tqdm(executor.map(heat2map, heatmaps, [args]*len(heatmaps)), total=len(heatmaps)))
+    #summary not processed
+    out_work = [heatmaps[i] for i in range(len(flag)) if flag[i] == 'processed']
+    out_missing_chm = [heatmaps[i] for i in range(len(flag)) if flag[i] == 'error chm']
+    out_missing_elevation = [heatmaps[i] for i in range(len(flag)) if flag[i] == 'error elevation']
 
-    return chm_missing, elevation_missing, processing_error
+    return out_work, out_missing_chm, out_missing_elevation
 
 
 def merge_all(out_dir):
@@ -145,15 +149,14 @@ if __name__ == '__main__':
     parser.add_argument('--scan_window', default=10, type=int, help='window size to scan the area on height map to cover entire tree if already detected by heatmap, in pixels')
     parser.add_argument('--low_vege', default=3, type=int, help='threshold for low vegetation')
     parser.add_argument('--ndvi_tree', default=0.2, type=float, help='threshold for tree detection using NDVI')
-
+    parser.add_argument('--maxworker', default=10, type=int, help='maximum number of workers')
     args = parser.parse_args()
     out_work, out_missing_chm, out_missing_elevation = main(args)
     merge_all(args.output_dir)
     print('All processing done. :D')
-    print('Missing chm for: ', out_missing_chm)
-    print('Missing elevation for: ', out_missing_elevation)
-    print('Processing error for: ', out_work)
-    print('total failed: ', len(out_missing_chm) + len(out_missing_elevation) + len(out_work))
+    print(f'Processed {len(out_work)} heatmaps')
+    print(f'Missing chm for {len(out_missing_chm)} heatmaps')
+    print(f'Missing elevation for {len(out_missing_elevation)} heatmaps')
 
 
 
