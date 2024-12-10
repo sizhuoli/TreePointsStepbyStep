@@ -76,14 +76,14 @@ def heat2map(heatmap, args):
                     thres_h[scanned_area == 1] = 0
                     thres_h[ndvi < args.ndvi_tree] = 0
                     # ipdb.set_trace()
-                    coords2 = peak_local_max(thres_h, min_distance=8, threshold_abs=args.low_vege, num_peaks=20000)
+                    coords2 = peak_local_max(thres_h, min_distance=args.min_dis, threshold_abs=args.low_vege, num_peaks=args.num_peak_chm)
                     if len(coords2) != 0:
                         for c in coords2:
                             x, y = c
                             point_height.append(height[max(0, x-args.height_window):min(height.shape[0], x+args.height_window), max(0, y-args.height_window):min(height.shape[1], y+args.height_window)].max())
                             point_elev.append(elev[max(0, x-args.height_window):min(elev.shape[0], x+args.height_window), max(0, y-args.height_window):min(elev.shape[1], y+args.height_window)].max())
 
-
+    #
                 point_height = np.array(point_height)
                 point_elev = np.array(point_elev)
                 # save to file
@@ -111,6 +111,11 @@ def heat2map(heatmap, args):
 def main(args):
 
     heatmaps = glob.glob(args.heatmap_dir + '*1km*density.tif')
+    # check if output file already exists
+    locates = [re.search(r'1km_(\d+_\d+)_density', h).group(1) for h in heatmaps]
+    # exclude those already processed
+    heatmaps = [heatmaps[i] for i in range(len(heatmaps)) if not os.path.exists(os.path.join(args.output_dir, f'1km_{locates[i]}_treeCenters.gpkg'))]
+    # ipdb.set_trace()
     print(f'Found {len(heatmaps)} heatmaps (tree density maps) to process')
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
@@ -136,20 +141,22 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert heatmap (tree density map) to tree center points')
     # parser.add_argument('--heatmap_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/', type=str, help='directory to heatmaps')
     parser.add_argument('--heatmap_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/', type=str, help='directory to heatmaps')
+    # parser.add_argument('--heatmap_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/test_show_diff2/heat/', type=str, help='directory to heatmaps')
     parser.add_argument('--chm_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/elevation/DHM/', type=str, help='directory to chm')
     parser.add_argument('--elevation_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/elevation/DTM/', type=str, help='directory to elevation')
     # parser.add_argument('--image_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/thy/images/RGBNIR_downsampled/', type=str, help='directory to RGBNIR images')
     parser.add_argument('--image_dir', default='/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/AOI_images/', type=str, help='directory to RGBNIR images')
     # parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/tree_centers_final_scanw10_heatmapNDVI_check/', type=str, help='directory to save tree center points')
-    parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/tree_centers_final_scanw10_heatmapNDVI_check/', type=str, help='directory to save tree center points')
-    parser.add_argument('--min_dis', default=2, type=int, help='minimum distance between tree centers, in pixels')
-    parser.add_argument('--thres_abs', default=0.001, type=float, help='empirical threshold for kernel peak')
+    parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/tree_centers_final_scanw10_heatmapNDVI_check_mindis12_thre0002_scan12_peak2000/', type=str, help='directory to save tree center points')
+    parser.add_argument('--min_dis', default=12, type=int, help='minimum distance between tree centers, in pixels, 0.25m resolution, 8p=2m, 12p=3m')
+    parser.add_argument('--thres_abs', default=0.002, type=float, help='empirical threshold for kernel peak')
     parser.add_argument('--alpha', default=0.2, type=float, help='threshold for kernel peak')
-    parser.add_argument('--height_window', default=5, type=int, help='window size to search for tree height and elevation, in pixels')
-    parser.add_argument('--scan_window', default=10, type=int, help='window size to scan the area on height map to cover entire tree if already detected by heatmap, in pixels')
+    parser.add_argument('--height_window', default=6, type=int, help='window size to search for tree height and elevation, in pixels')
+    parser.add_argument('--scan_window', default=12, type=int, help='window size to scan the area on height map to cover entire tree if already detected by heatmap, in pixels')
     parser.add_argument('--low_vege', default=3, type=int, help='threshold for low vegetation')
     parser.add_argument('--ndvi_tree', default=0.2, type=float, help='threshold for tree detection using NDVI')
-    parser.add_argument('--maxworker', default=10, type=int, help='maximum number of workers')
+    parser.add_argument('--maxworker', default=15, type=int, help='maximum number of workers')
+    parser.add_argument('--num_peak_chm', default=2000, type=int, help='number of peaks to detect from chm')
     args = parser.parse_args()
     out_work, out_missing_chm, out_missing_elevation = main(args)
     merge_all(args.output_dir)
