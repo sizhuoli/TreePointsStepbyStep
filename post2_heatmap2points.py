@@ -50,7 +50,7 @@ def heat2map(heatmap, args):
             assert ndvi.shape == heat.shape
             heat[ndvi < 0] = 0 # only filter out very low ndvi
             thress = max(heat.max() * args.alpha, args.thres_abs)
-            coords = peak_local_max(heat, min_distance=args.min_dis, threshold_abs=thress)
+            coords = peak_local_max(heat, min_distance=args.min_dis, threshold_abs=thress, exclude_border=False)
 
             with rasterio.open(chm) as src2:
                 height = src2.read(1)
@@ -76,7 +76,7 @@ def heat2map(heatmap, args):
                     thres_h[scanned_area == 1] = 0
                     thres_h[ndvi < args.ndvi_tree] = 0
                     # ipdb.set_trace()
-                    coords2 = peak_local_max(thres_h, min_distance=args.min_dis, threshold_abs=args.low_vege, num_peaks=args.num_peak_chm)
+                    coords2 = peak_local_max(thres_h, min_distance=args.min_dis, threshold_abs=args.low_vege, num_peaks=args.num_peak_chm, exclude_border=False)
                     if len(coords2) != 0:
                         for c in coords2:
                             x, y = c
@@ -146,8 +146,8 @@ if __name__ == '__main__':
     parser.add_argument('--elevation_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/elevation/DTM/', type=str, help='directory to elevation')
     # parser.add_argument('--image_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/thy/images/RGBNIR_downsampled/', type=str, help='directory to RGBNIR images')
     parser.add_argument('--image_dir', default='/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/AOI_images/', type=str, help='directory to RGBNIR images')
-    # parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/tree_centers_final_scanw10_heatmapNDVI_check/', type=str, help='directory to save tree center points')
-    parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/tree_centers_final_scanw10_heatmapNDVI_check_mindis10_thre00005_scan15_peak1000/', type=str, help='directory to save tree center points')
+    # parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/tree_centers_final_scanw10_heatmapNDVI_check_mindis10_thre00005_scan15_peak1000_incdBorder/', type=str, help='directory to save tree center points')
+    parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/tree_centers_final_scanw10_heatmapNDVI_check_mindis10_thre00005_scan15_peak1000_incdBorder/', type=str, help='directory to save tree center points')
     parser.add_argument('--min_dis', default=10, type=int, help='minimum distance between tree centers, in pixels, 0.25m resolution, 8p=2m, 12p=3m')
     parser.add_argument('--thres_abs', default=0.0005, type=float, help='empirical threshold for kernel peak')
     parser.add_argument('--alpha', default=0.2, type=float, help='threshold for kernel peak')

@@ -16,8 +16,9 @@ import os
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--path', type=str, default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/', help='path to the tree segmentation files')
-parser.add_argument('--out', type=str, default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/cleaned_treemasks_radius1m/', help='output path')
+# parser.add_argument('--path', type=str, default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/', help='path to the tree segmentation files')
+parser.add_argument('--path', type=str, default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/', help='path to the tree segmentation files')
+parser.add_argument('--out', type=str, default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/cleaned_treemasks_radius1m/', help='output path')
 parser.add_argument('--radius', type=int, default=1, help='radius for dilation and erosion, in meters')
 parser.add_argument('--resolution', type=int, default=25, help='resolution of the images, in cm')
 args = parser.parse_args()

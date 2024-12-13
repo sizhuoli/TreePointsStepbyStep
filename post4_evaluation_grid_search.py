@@ -62,7 +62,7 @@ def heat2map(heatmap, args, manual_counts):
         image = args.image_dir + ff.replace('_density', '')
 
 
-
+    type = manual_counts[manual_counts['filename'] == ff.replace('_density', '')]['forest_type'].values[0]
 
 
     with rasterio.open(heatmap) as src1:
@@ -79,7 +79,11 @@ def heat2map(heatmap, args, manual_counts):
             assert ndvi.shape == heat.shape
             heat[ndvi < 0] = 0 # only filter out very low ndvi
             thress = max(heat.max() * args.alpha, args.thres_abs)
-            coords = peak_local_max(heat, min_distance=args.min_dis, threshold_abs=thress)
+            if type == 0:
+                # nonforest examples can be heavily affected by the border, so exclude border
+                coords = peak_local_max(heat, min_distance=args.min_dis, threshold_abs=thress, exclude_border=True)
+            else:
+                coords = peak_local_max(heat, min_distance=args.min_dis, threshold_abs=thress, exclude_border=False)
 
             with rasterio.open(chm) as src2:
                 height = src2.read(1)
@@ -99,7 +103,11 @@ def heat2map(heatmap, args, manual_counts):
                 thres_h[scanned_area == 1] = 0
                 thres_h[ndvi < args.ndvi_tree] = 0
                 # ipdb.set_trace()
-                coords2 = peak_local_max(thres_h, min_distance=args.min_dis, threshold_abs=args.low_vege, num_peaks=args.num_peak_chm)
+                if type == 0:
+                    # nonforest examples can be heavily affected by the border, so exclude border
+                    coords2 = peak_local_max(thres_h, min_distance=args.min_dis, threshold_abs=args.low_vege, num_peaks=args.num_peak_chm, exclude_border=True)
+                else:
+                    coords2 = peak_local_max(thres_h, min_distance=args.min_dis, threshold_abs=args.low_vege, num_peaks=args.num_peak_chm, exclude_border=False)
 
     #
             coords = np.concatenate([coords, coords2])
@@ -168,7 +176,7 @@ best_para_fold = []
 heat_maps_all = glob.glob(heat_path + '*.tif')
 total_comb = len(min_dis_s) * len(thres_abs_s) * len(scan_window_s) * len(num_peak_chm_s) * len(ndvi_tree_s)
 # outer fold
-cv = KFold(n_splits=8, shuffle=True, random_state=99)
+cv = KFold(n_splits=3, shuffle=True, random_state=0)
 fold_count = 0
 global_best_score = 100
 global_best_params = None
