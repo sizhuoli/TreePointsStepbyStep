@@ -49,8 +49,8 @@ def heat2map(heatmap, args):
             # filter out ground or buildings
             assert ndvi.shape == heat.shape
             heat[ndvi < 0] = 0 # only filter out very low ndvi
-            # thress = max(heat.max() * args.alpha, args.thres_abs)
-            coords = peak_local_max(heat, min_distance=4, threshold_abs=args.thres_abs, exclude_border=False)
+            thress = max(heat.max() * args.alpha, args.thres_abs)
+            coords = peak_local_max(heat, min_distance=args.min_dis, threshold_abs=thress, exclude_border=False)
 
             with rasterio.open(chm) as src2:
                 height = src2.read(1)
@@ -146,17 +146,17 @@ if __name__ == '__main__':
     parser.add_argument('--elevation_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/elevation/DTM/', type=str, help='directory to elevation')
     parser.add_argument('--image_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/thy/images/RGBNIR_downsampled/', type=str, help='directory to RGBNIR images')
     # parser.add_argument('--image_dir', default='/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/AOI_images/', type=str, help='directory to RGBNIR images')
-    parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/tree_centers_final_scanw12_heatmapNDVI_check_heatmindis4_chmmindis6_thre00001_nomaxthres_peak20k_ndvi02_aggressive/', type=str, help='directory to save tree center points')
+    parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/recap_round3/', type=str, help='directory to save tree center points')
     # parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/tree_centers_final_heatmapNDVI_check_heatmindis4_chmmindis6_absthre00001_nomaxthres_scan12_peak20k_ndvi02_aggressive/', type=str, help='directory to save tree center points')
-    parser.add_argument('--min_dis', default=6, type=int, help='for chm only, minimum distance between tree centers, in pixels, 0.25m resolution, 8p=2m, 12p=3m')
-    parser.add_argument('--thres_abs', default=0.0001, type=float, help='empirical threshold for kernel peak')
+    parser.add_argument('--min_dis', default=10, type=int, help='for chm only, minimum distance between tree centers, in pixels, 0.25m resolution, 8p=2m, 12p=3m')
+    parser.add_argument('--thres_abs', default=0.0005, type=float, help='empirical threshold for kernel peak')
     parser.add_argument('--alpha', default=0.2, type=float, help='threshold for kernel peak')
     parser.add_argument('--height_window', default=6, type=int, help='window size to search for tree height and elevation, in pixels')
-    parser.add_argument('--scan_window', default=12, type=int, help='window size to scan the area on height map to cover entire tree if already detected by heatmap, in pixels')
+    parser.add_argument('--scan_window', default=15, type=int, help='window size to scan the area on height map to cover entire tree if already detected by heatmap, in pixels')
     parser.add_argument('--low_vege', default=3, type=int, help='threshold for low vegetation')
-    parser.add_argument('--ndvi_tree', default=0.2, type=float, help='threshold for tree detection using NDVI')
+    parser.add_argument('--ndvi_tree', default=0, type=float, help='threshold for tree detection using NDVI')
     parser.add_argument('--maxworker', default=15, type=int, help='maximum number of workers')
-    parser.add_argument('--num_peak_chm', default=20000, type=int, help='number of peaks to detect from chm')
+    parser.add_argument('--num_peak_chm', default=1000, type=int, help='number of peaks to detect from chm')
     args = parser.parse_args()
     out_work, out_missing_chm, out_missing_elevation = main(args)
     merge_all(args.output_dir)
