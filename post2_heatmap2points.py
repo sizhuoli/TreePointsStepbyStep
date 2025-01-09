@@ -51,7 +51,6 @@ def heat2map(heatmap, args):
             heat[ndvi < 0] = 0 # only filter out very low ndvi
             thress = max(heat.max() * args.alpha, args.thres_abs)
             coords = peak_local_max(heat, min_distance=args.min_dis, threshold_abs=thress, exclude_border=False)
-
             with rasterio.open(chm) as src2:
                 height = src2.read(1)
                 height = ndi.zoom(height, (heat.shape[0]/height.shape[0], heat.shape[1]/height.shape[1]))
@@ -83,7 +82,6 @@ def heat2map(heatmap, args):
                             point_height.append(height[max(0, x-args.height_window):min(height.shape[0], x+args.height_window), max(0, y-args.height_window):min(height.shape[1], y+args.height_window)].max())
                             point_elev.append(elev[max(0, x-args.height_window):min(elev.shape[0], x+args.height_window), max(0, y-args.height_window):min(elev.shape[1], y+args.height_window)].max())
 
-    #
                 point_height = np.array(point_height)
                 point_elev = np.array(point_elev)
                 # save to file
@@ -135,20 +133,21 @@ def merge_all(out_dir):
     call(['ogrmerge.py', '-f', 'GPKG', '-single', '-o', out_dir + 'merged_centers.gpkg', out_dir + '1km*.gpkg', '-src_layer_field_content', '{DS_BASENAME}'])
     return
 
+def delete_separate(out_dir):
+    for f in glob.glob(out_dir + '1km*.gpkg'):
+        os.remove(f)
+    return
+
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Convert heatmap (tree density map) to tree center points')
-    parser.add_argument('--heatmap_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/', type=str, help='directory to heatmaps')
-    # parser.add_argument('--heatmap_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/', type=str, help='directory to heatmaps')
-    # parser.add_argument('--heatmap_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/test_show_diff2/heat/', type=str, help='directory to heatmaps')
-    parser.add_argument('--chm_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/elevation/DHM/', type=str, help='directory to chm')
-    parser.add_argument('--elevation_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/elevation/DTM/', type=str, help='directory to elevation')
-    parser.add_argument('--image_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/thy/images/RGBNIR_downsampled/', type=str, help='directory to RGBNIR images')
-    # parser.add_argument('--image_dir', default='/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/AOI_images/', type=str, help='directory to RGBNIR images')
-    parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/recap_round3/', type=str, help='directory to save tree center points')
-    # parser.add_argument('--output_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/tree_centers_final_heatmapNDVI_check_heatmindis4_chmmindis6_absthre00001_nomaxthres_scan12_peak20k_ndvi02_aggressive/', type=str, help='directory to save tree center points')
-    parser.add_argument('--min_dis', default=10, type=int, help='for chm only, minimum distance between tree centers, in pixels, 0.25m resolution, 8p=2m, 12p=3m')
+    parser.add_argument('--heatmap_dir', default='/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/preds/', type=str, help='directory to heatmaps')
+    parser.add_argument('--chm_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/elevation/DHM/', type=str, help='directory to chm files')
+    parser.add_argument('--elevation_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/elevation/DTM/', type=str, help='directory to elevation files')
+    parser.add_argument('--image_dir', default='/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/', type=str, help='directory to RGBNIR images')
+    parser.add_argument('--output_dir', default='/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/preds/', type=str, help='directory to save tree center points')
+    parser.add_argument('--min_dis', default=10, type=int, help='for chm only, minimum distance between tree centers, in pixels, if 0.25m resolution, 8p=2m, 10p=2.5m')
     parser.add_argument('--thres_abs', default=0.0005, type=float, help='empirical threshold for kernel peak')
     parser.add_argument('--alpha', default=0.2, type=float, help='threshold for kernel peak')
     parser.add_argument('--height_window', default=6, type=int, help='window size to search for tree height and elevation, in pixels')
@@ -160,10 +159,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     out_work, out_missing_chm, out_missing_elevation = main(args)
     merge_all(args.output_dir)
+    delete_separate(args.output_dir)
     print('All processing done. :D')
     print(f'Processed {len(out_work)} heatmaps')
-    print(f'Missing chm for {len(out_missing_chm)} heatmaps')
-    print(f'Missing elevation for {len(out_missing_elevation)} heatmaps')
+    print(f'Missing chm file for {len(out_missing_chm)} heatmaps')
+    print(f'Missing elevation file for {len(out_missing_elevation)} heatmaps')
 
 
 

@@ -19,21 +19,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-heat_path = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/vis_results/clipped_heats/'
-polygon_path = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/vis_results/'
-manual_count_path = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/vis_results/all_groups_count_fty.gpkg'
+heat_path = 'path to clipped heatmaps' #'../clipped_heats/'
+manual_count_path = 'path to gpkg file containing manual counts in each clipped area'#'.../all_groups_count_fty.gpkg'
 
 
 # load manual points and count the number of points in each polygon
 manual_counts = gps.read_file(manual_count_path, layer='all_groups_count_fty')
-# ipdb.set_trace()
-# # merge forest type by taking the nonnan value from the 3 columns
-# manual_counts['forest_type'] = manual_counts[['forestType', 'forestType_2', 'forestType_3']].bfill(axis=1).iloc[:, 0]
-# # delete the 3 columns
-# manual_counts.drop(columns=['forestType', 'forestType_2', 'forestType_3'], inplace=True)
-# # # save
-# manual_counts.to_file(manual_count_path, driver='GPKG')
-# ipdb.set_trace()
+
 
 # gridsearch
 min_dis_s = [5, 10, 12, 15]
@@ -46,13 +38,10 @@ ndvi_tree_s = [0, 0.1]
 
 def heat2map(heatmap, args, manual_counts):
     """returns the number of trees detected"""
-    # /mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/vis_results/clipped_chms/img_0_DHM_1km_6214_692.tif
-    # /mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/vis_results/clipped_heats/img_0_2019_1km_6214_692_density.tif
-    # /mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/vis_results/clipped_images/img_0_2019_1km_6214_692.tif
-    # /mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/vis_results/clipped_images/img_0_1km_6308_465.tif
-    # / mnt / ssdc / Denmark / DK_treeProject_DHI_KDS / vis_results / clipped_heats / img_0_1km_6308_465_density.tif
+
     ff = os.path.basename(heatmap)
     # ipdb.set_trace()
+    # handle naming differences
     if '2019' in ff:
         chm = args.chm_dir + ff.replace('2019', 'DHM').replace('_density', '')
         image = args.image_dir + ff.replace('_density', '')
@@ -137,7 +126,7 @@ def evaluate(heatmaps, args, manual_counts):
         preds.append(pred)
         truths.append(truth)
         types.append(forest_t)
-    # return r2_score(truths, preds)
+
     # average relative error
     overall = re(np.array(truths), np.array(preds))
     # split forest type according to manual counts
@@ -150,23 +139,12 @@ def evaluate(heatmaps, args, manual_counts):
     non_score = re(np.array(truths)[non_ind], np.array(preds)[non_ind])
     return overall, B_score, C_score, non_score
 
-def r2(heatmaps, args, manual_counts):
-    preds = []
-    truths = []
-
-    for heat in heatmaps:
-        pred, truth, _ = heat2map(heat, args, manual_counts)
-        preds.append(pred)
-        truths.append(truth)
-    return r2_score(truths, preds)
-
 # other parameters
 class args:
     def __init__(self):
-        self.chm_dir = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/vis_results/clipped_chms/'
-        self.image_dir = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/vis_results/clipped_images/'
+        self.chm_dir = 'path to clipped chms' #'../clipped_chms/'
+        self.image_dir = 'path to clipped images' #'../clipped_images/'
         self.low_vege = 3
-        self.maxworker = 15
         self.alpha = 0.2
 
 args = args()
@@ -184,7 +162,6 @@ test_scores = []
 test_B_scores = []
 test_C_scores = []
 test_non_scores = []
-test_r2s = []
 fit_scores = []
 for train_maps, test_maps in cv.split(heat_maps_all):
     tests = [heat_maps_all[i] for i in test_maps]
@@ -221,17 +198,17 @@ for train_maps, test_maps in cv.split(heat_maps_all):
     # test score using best parameters
     args.min_dis, args.thres_abs, args.scan_window, args.num_peak_chm, args.ndvi_tree = best_params
     test_score, test_B_score, test_C_score, test_non_score = evaluate(tests, args, manual_counts)
-    test_r2 = r2(tests, args, manual_counts)
     print(f"test score: {test_score} in fold {fold_count}; B score: {test_B_score}; C score: {test_C_score}; non score: {test_non_score}")
     test_scores.append(test_score)
     test_B_scores.append(test_B_score)
     test_C_scores.append(test_C_score)
     test_non_scores.append(test_non_score)
-    test_r2s.append(test_r2)
     best_para_fold.append(best_params)
     fold_count += 1
     print('===========================')
     print(f"fold {fold_count} done.")
+
+
 
 # the most common parameters     # note that some comb leads to overfitting
 from collections import Counter
@@ -250,7 +227,6 @@ print('average C group score using most common parameters: ', np.nanmean(np.arra
 # average non score if using the most common parameters
 print('average non group score using most common parameters: ', np.nanmean(np.array(test_non_scores)[ind]), np.nanstd(np.array(test_non_scores)[ind]))
 
-print('average r2 using most common parameters: ', np.mean(np.array(test_r2s)[ind]), np.std(np.array(test_r2s)[ind]))
 # most common parameters: there is still a risk that the most common parameters are not the best parameters, but we rule out some overfitting combinations
 print('most common parameters: ', global_best_params2)
 # plot fit and test scores

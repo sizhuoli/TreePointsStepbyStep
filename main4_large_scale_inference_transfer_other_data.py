@@ -25,7 +25,7 @@ config = RasterAnalysis.Configuration()
 predictor = anaer(config)
 predictor.load_model()
 not_work = predictor.segcount_RUN()
-print('(((((files not processed: ', not_work)
+print('number of files failed: ', len(not_work))
 
 
 

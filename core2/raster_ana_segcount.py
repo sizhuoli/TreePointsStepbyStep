@@ -35,7 +35,6 @@ from sklearn.metrics import mean_absolute_error, median_absolute_error
 
 import sys
 import math
-# from core.UNet_multires import UNet
 
 # from rasterstats import zonal_stats
 import matplotlib.pyplot as plt  # plotting tools

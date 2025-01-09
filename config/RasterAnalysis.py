@@ -3,21 +3,10 @@ class Configuration:
     
     def __init__(self):
         # a standard approach to predict tree count and segmentation for an example 1km tile with rgb bands and similar spatial resolution as the training data (20cm)
-        self.area = 'kongernes'
-
-
-        if self.area == 'thy': # rgb and nir in separate files
-            self.input_image_dir = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/thy/images/RGBNIR_downsampled/'
-            self.input_image_type = '.tif'
-            self.input_image_pref = '1km'
-
-        elif self.area == 'kongernes':
-            self.input_image_dir = '/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/AOI_images/' #'/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/AOI_images/'#'/home/sizhuo/Desktop/code_repository/TreeCountSegHeight-main/example_1km_tile_tif/'
-            self.input_image_type = '.tif'  # '.tif'#'.jp2'
-            self.input_image_pref = '2019'  # prefix of image file names, can be used to filter out images
-
-        else:
-            raise ValueError('area not found')
+        # path to the aerial images, four bands in order, red, green, blue, nearinfrared
+        self.input_image_dir = '/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/' #'/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/AOI_images/'#'/home/sizhuo/Desktop/code_repository/TreeCountSegHeight-main/example_1km_tile_tif/'
+        self.input_image_type = '.tif'  # '.tif'#'.jp2'
+        self.input_image_pref = ''  # prefix of image file names, can be used to filter out images
 
         self.channel_names1 = ['red', 'green', 'blue',
                                'infrared']
@@ -33,7 +22,7 @@ class Configuration:
         self.saveresult = 1
         self.input_size = 256 # model input size
         self.inputBN = False
-        self.output_dir = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/' #/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/predictions/final1_AOI_3models_str64/'#'/home/sizhuo/Desktop/code_repository/TreeCountSegHeight-main/example_1km_tile_tif/predictions/'
+        self.output_dir = '/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/preds/' #/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/predictions/final1_AOI_3models_str64/'#'/home/sizhuo/Desktop/code_repository/TreeCountSegHeight-main/example_1km_tile_tif/predictions/'
         self.output_suffix = '_seg' # for segmentation
         self.output_image_type = '.tif'
         self.output_prefix = 'pred_'#+self.input_image_pref

@@ -1,5 +1,4 @@
 
-# /home/sizhuo/Desktop/code_repository/CNN_AGB/
 
 import os, subprocess
 import time
@@ -12,8 +11,6 @@ import rasterio
 from osgeo import gdal
 import geopandas as gpd
 from shapely.geometry import box
-import sys
-# sys.path.append("/home/sizhuo/Desktop/code_repository/CNN_AGB/core")
 from core2.data_clipping_util import raster_copy
 import ipdb
 gdal.SetConfigOption('CPL_LOG', '/dev/null')
@@ -64,9 +61,6 @@ def process(image_dir, output_dir_img, areas_fp, pref = '', ftype = '.tif'):
 
     print(f"Done. Found {len(image_paths)} tiles of which {len(images_with_areas)} contain rectangles.")
 
-    # ipdb.set_trace()
-    # for aerial images, for CHM see below
-    # For each input image, get all training areas in the image
 
     for im_path, area_ids in tqdm(images_with_areas, "Processing images with areas", position=1):
         for l in tqdm(range(len(area_ids[0])), f"Extracting areas for {os.path.basename(im_path)}", position=0):
@@ -91,17 +85,13 @@ def process(image_dir, output_dir_img, areas_fp, pref = '', ftype = '.tif'):
 
 
 
+if __name__ == '__main__':
 
+    image_dir = 'PATH_TO_IMAGES'
+    output_dir_img = 'PATH_TO_CLIPPED_OUTPUT' #'../clipped_heats/'
+    areas_fp = 'path to shapefile indicating the areas to clip'
+    pref = '' # prefix of the files to clip
 
-
-# image_dir = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/thy/images/RGBNIR_downsampled/'
-# image_dir = "/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/AOI_images/"
-# image_dir = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/predictions/test2_st64_3models_solved_nan/'
-# image_dir = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/kongernes/predictions/final_3models_std64/'
-image_dir = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/elevation/DHM/'
-output_dir_img = "/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/vis_results/clipped_chms/"
-areas_fp = '/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/vis_results/C_group.shp'
-
-images_with_areas = process(image_dir, output_dir_img, areas_fp, pref = 'DHM', ftype = '.tif')
+    images_with_areas = process(image_dir, output_dir_img, areas_fp, pref = pref, ftype = '.tif')
 
 
