@@ -4,7 +4,7 @@ class Configuration:
     def __init__(self):
         # a standard approach to predict tree count and segmentation for an example 1km tile with rgb bands and similar spatial resolution as the training data (20cm)
         # path to the aerial images, four bands in order, red, green, blue, nearinfrared
-        self.input_image_dir = '/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/' #'/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/AOI_images/'#'/home/sizhuo/Desktop/code_repository/TreeCountSegHeight-main/example_1km_tile_tif/'
+        self.input_image_dir = '/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/'
         self.input_image_type = '.tif'  # '.tif'#'.jp2'
         self.input_image_pref = ''  # prefix of image file names, can be used to filter out images
 
@@ -22,7 +22,7 @@ class Configuration:
         self.saveresult = 1
         self.input_size = 256 # model input size
         self.inputBN = False
-        self.output_dir = '/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/preds/' #/mnt/ssda/DK_TreeProject_DHI_KDS/kongernes2019/predictions/final1_AOI_3models_str64/'#'/home/sizhuo/Desktop/code_repository/TreeCountSegHeight-main/example_1km_tile_tif/predictions/'
+        self.output_dir = '/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/preds/'
         self.output_suffix = '_seg' # for segmentation
         self.output_image_type = '.tif'
         self.output_prefix = 'pred_'#+self.input_image_pref
