@@ -17,8 +17,7 @@ warnings.filterwarnings("ignore")
 
 
 def heat2map(heatmap, args):
-    #/ mnt / ssdc / Denmark / DK_treeProject_DHI_KDS / kongernes / predictions / final_3models_std64 / 2019_1km_6197_684_density.tif
-    # locate='6197_684'
+
     locate = re.search(r'1km_(\d+_\d+)_density', heatmap).group(1)
 
     try:
@@ -143,8 +142,8 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Convert heatmap (tree density map) to tree center points')
     parser.add_argument('--heatmap_dir', default='/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/preds/', type=str, help='directory to heatmaps')
-    parser.add_argument('--chm_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/elevation/DHM/', type=str, help='directory to chm files')
-    parser.add_argument('--elevation_dir', default='/mnt/ssdc/Denmark/DK_treeProject_DHI_KDS/elevation/DTM/', type=str, help='directory to elevation files')
+    parser.add_argument('--chm_dir', default='..../elevation/DHM/', type=str, help='directory to chm files')
+    parser.add_argument('--elevation_dir', default='..../elevation/DTM/', type=str, help='directory to elevation files')
     parser.add_argument('--image_dir', default='/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/', type=str, help='directory to RGBNIR images')
     parser.add_argument('--output_dir', default='/home/sizhuo/Desktop/code_repository/TreePointsStepbyStep/test_example/preds/', type=str, help='directory to save tree center points')
     parser.add_argument('--min_dis', default=10, type=int, help='for chm only, minimum distance between tree centers, in pixels, if 0.25m resolution, 8p=2m, 10p=2.5m')

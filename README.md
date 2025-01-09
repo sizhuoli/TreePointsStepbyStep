@@ -6,7 +6,7 @@ A follow-up tutorial for the [published tree counting/segmentation framework](ht
 
 ![Figure 1](figures/fig1.png)
 
-Figure 1. From remote sensing data to a tree database.
+Figure 1. From remote sensing data to a tree database. Color indicates tree height (low to high = blue to red)
 
 
 ## General Usage
